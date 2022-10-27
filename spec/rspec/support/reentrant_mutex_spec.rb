@@ -51,4 +51,29 @@ RSpec.describe RSpec::Support::ReentrantMutex do
       end
     end
   end
+
+  describe 'with mocked methods inside fibers' do
+    class ExampleClass
+      def self.do_something; true; end
+    end
+
+    subject(:mutation) do
+      f = Fiber.new do
+        ExampleClass.do_something
+      end
+      f.resume
+    end
+
+    let(:mocked_return_value) { 'something' }
+
+    before do
+      allow(ExampleClass).to receive(:do_something) do
+        mocked_return_value
+      end
+    end
+
+    it 'does not hang' do
+      expect(subject).to eq('something')
+    end
+  end
 end
